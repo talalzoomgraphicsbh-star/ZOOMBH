@@ -537,17 +537,20 @@ function showToast() {
 }
 
 function loadAndRender() {
+  console.log('loadAndRender called');
   const tbody = document.getElementById('tbody');
   const metrics = document.getElementById('metrics');
   metrics.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--gray);font-size:14px">⏳ جاري تحميل البيانات...</div>`;
   tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="emoji">⏳</div>جاري التحميل...</div></td></tr>`;
 
   const timer = setTimeout(() => {
+    console.log('Timeout — no response from script');
     metrics.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--red);font-size:14px">⚠️ فشل التحميل، تحقق من الاتصال وحاول مجدداً 🔄</div>`;
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="emoji">⚠️</div>تعذّر تحميل البيانات</div></td></tr>`;
   }, 12000);
 
   window.__zoombhCallback = function(data) {
+    console.log('Callback received, rows:', data.length);
     clearTimeout(timer);
     orders = data.map((o, i) => ({
       id: i,
@@ -562,16 +565,15 @@ function loadAndRender() {
     renderDash();
   };
 
-  // Pure JSONP — inject a script tag directly
-  const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(SCRIPT_URL);
-
   const old2 = document.getElementById('jsonp-tag');
   if(old2) old2.remove();
 
   const s = document.createElement('script');
   s.id = 'jsonp-tag';
   s.src = SCRIPT_URL + '?callback=__zoombhCallback&t=' + Date.now();
-  s.onerror = () => {
+  console.log('Injecting JSONP script:', s.src);
+  s.onerror = (err) => {
+    console.error('JSONP script error:', err);
     clearTimeout(timer);
     metrics.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--red);font-size:14px">⚠️ فشل التحميل، تحقق من الاتصال وحاول مجدداً 🔄</div>`;
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="emoji">⚠️</div>تعذّر تحميل البيانات</div></td></tr>`;
